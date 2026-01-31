@@ -1,14 +1,42 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from 'react';
+import { Header } from '@/components/Header';
+import { HeroSection } from '@/components/HeroSection';
+import { UploadSection } from '@/components/UploadSection';
+import { WardrobeSection } from '@/components/WardrobeSection';
+import { PreviewSection } from '@/components/PreviewSection';
+import { Footer } from '@/components/Footer';
 
-const Index = () => {
+export default function Index() {
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [selectedClothing, setSelectedClothing] = useState<string | null>(null);
+
+  const handleImageUpload = (imageUrl: string) => {
+    setUploadedImage(imageUrl || null);
+  };
+
+  const handleSelectClothing = (id: string) => {
+    setSelectedClothing(id === selectedClothing ? null : id);
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen">
+      <Header />
+      <main>
+        <HeroSection />
+        <UploadSection
+          onImageUpload={handleImageUpload}
+          uploadedImage={uploadedImage}
+        />
+        <WardrobeSection
+          selectedClothing={selectedClothing}
+          onSelectClothing={handleSelectClothing}
+        />
+        <PreviewSection
+          uploadedImage={uploadedImage}
+          selectedClothing={selectedClothing}
+        />
+      </main>
+      <Footer />
     </div>
   );
-};
-
-export default Index;
+}

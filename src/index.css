@@ -4,10 +4,106 @@
 
 @layer base {
   :root {
-   
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 8%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 8%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 187 85% 53%;
+    --primary-foreground: 222 47% 6%;
+    --secondary: 222 30% 14%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 222 30% 14%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 262 83% 58%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 222 30% 18%;
+    --input: 222 30% 14%;
+    --ring: 187 85% 53%;
+    --radius: 0.75rem;
+
+    /* Custom tokens */
+    --glow: 187 85% 53%;
+    --glow-secondary: 262 83% 58%;
   }
 
-  .dark {
+  * {
+    @apply border-border;
+  }
 
+  body {
+    @apply bg-background text-foreground antialiased;
+    background-image:
+      radial-gradient(ellipse at 50% 0%, hsl(187 85% 53% / 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 50%, hsl(262 83% 58% / 0.05) 0%, transparent 40%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+}
+
+@layer utilities {
+  .glass {
+    background: hsl(222 47% 10% / 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid hsl(222 30% 25% / 0.5);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, hsl(187 85% 53%), hsl(262 83% 58%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .glow-border {
+    position: relative;
+  }
+
+  .glow-border::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    background: linear-gradient(135deg, hsl(187 85% 53%), hsl(262 83% 58%));
+    border-radius: inherit;
+    z-index: -1;
+    opacity: 0.5;
+    filter: blur(8px);
+    transition: opacity 0.3s ease;
+  }
+
+  .glow-border:hover::before {
+    opacity: 0.8;
+  }
+
+  .card-gradient {
+    background: linear-gradient(145deg, hsl(222 47% 12%), hsl(222 47% 8%));
+  }
+
+  .upload-zone {
+    background: linear-gradient(145deg, hsl(222 47% 10% / 0.8), hsl(222 47% 6% / 0.8));
+    border: 2px dashed hsl(222 30% 25%);
+    transition: all 0.3s ease;
+  }
+
+  .upload-zone:hover {
+    border-color: hsl(187 85% 53% / 0.5);
+    box-shadow: 0 0 30px hsl(187 85% 53% / 0.1);
+  }
+
+  .clothing-card {
+    background: linear-gradient(145deg, hsl(222 47% 12%), hsl(222 47% 8%));
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .clothing-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px hsl(0 0% 0% / 0.3);
+  }
+
+  .clothing-card.selected {
+    box-shadow: 0 0 0 2px hsl(187 85% 53%), 0 0 30px hsl(187 85% 53% / 0.3);
   }
 }
