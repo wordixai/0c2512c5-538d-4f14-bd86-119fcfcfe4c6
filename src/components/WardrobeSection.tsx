@@ -1,4 +1,6 @@
-import { Check } from 'lucide-react';
+import { Check, Upload } from 'lucide-react';
+import { useRef } from 'react';
+import { toast } from 'sonner';
 
 interface ClothingItem {
   id: string;
@@ -7,7 +9,7 @@ interface ClothingItem {
   image: string;
 }
 
-const clothingItems: ClothingItem[] = [
+const defaultClothingItems: ClothingItem[] = [
   {
     id: '1',
     name: '经典白衬衫',
@@ -47,11 +49,60 @@ const clothingItems: ClothingItem[] = [
 ];
 
 interface WardrobeSectionProps {
-  selectedClothing: string | null;
-  onSelectClothing: (id: string) => void;
+  selectedClothing: { id: string; image: string } | null;
+  onSelectClothing: (clothing: { id: string; image: string } | null) => void;
+  customClothingItems: ClothingItem[];
+  onAddCustomClothing: (item: ClothingItem) => void;
 }
 
-export function WardrobeSection({ selectedClothing, onSelectClothing }: WardrobeSectionProps) {
+export function WardrobeSection({
+  selectedClothing,
+  onSelectClothing,
+  customClothingItems,
+  onAddCustomClothing
+}: WardrobeSectionProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const allClothingItems = [...defaultClothingItems, ...customClothingItems];
+
+  const handleItemClick = (item: ClothingItem) => {
+    if (selectedClothing?.id === item.id) {
+      onSelectClothing(null);
+    } else {
+      onSelectClothing({ id: item.id, image: item.image });
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast.error('请上传图片文件');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          const newItem: ClothingItem = {
+            id: `custom-${Date.now()}`,
+            name: '自定义服装',
+            category: '自定义',
+            image: event.target.result as string,
+          };
+          onAddCustomClothing(newItem);
+          onSelectClothing({ id: newItem.id, image: newItem.image });
+          toast.success('服装已添加');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+    // Reset input
+    e.target.value = '';
+  };
+
   return (
     <section id="wardrobe" className="py-20 px-6">
       <div className="container mx-auto">
@@ -60,18 +111,38 @@ export function WardrobeSection({ selectedClothing, onSelectClothing }: Wardrobe
             <span className="gradient-text">选择服装</span>
           </h2>
           <p className="text-muted-foreground">
-            从我们的时尚服装库中选择你喜欢的款式
+            从服装库选择或上传你自己的服装图片
           </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
-          {clothingItems.map((item) => (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 md:gap-6">
+          {/* 上传自定义服装按钮 */}
+          <div
+            className="clothing-card rounded-xl overflow-hidden cursor-pointer border-2 border-dashed border-border hover:border-primary/50"
+            onClick={handleUploadClick}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <div className="aspect-[4/5] flex flex-col items-center justify-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <Upload className="w-6 h-6 text-primary" />
+              </div>
+              <span className="text-sm text-muted-foreground">上传服装</span>
+            </div>
+          </div>
+
+          {allClothingItems.map((item) => (
             <div
               key={item.id}
               className={`clothing-card rounded-xl overflow-hidden cursor-pointer ${
-                selectedClothing === item.id ? 'selected' : ''
+                selectedClothing?.id === item.id ? 'selected' : ''
               }`}
-              onClick={() => onSelectClothing(item.id)}
+              onClick={() => handleItemClick(item)}
             >
               <div className="relative aspect-[4/5]">
                 <img
@@ -79,7 +150,7 @@ export function WardrobeSection({ selectedClothing, onSelectClothing }: Wardrobe
                   alt={item.name}
                   className="w-full h-full object-cover"
                 />
-                {selectedClothing === item.id && (
+                {selectedClothing?.id === item.id && (
                   <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
                     <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
                       <Check className="w-6 h-6 text-primary-foreground" />

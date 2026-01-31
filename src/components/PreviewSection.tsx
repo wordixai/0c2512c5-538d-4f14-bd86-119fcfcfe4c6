@@ -1,26 +1,70 @@
 import { useState } from 'react';
 import { Wand2, Download, RefreshCw, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 interface PreviewSectionProps {
   uploadedImage: string | null;
-  selectedClothing: string | null;
+  selectedClothing: {
+    id: string;
+    image: string;
+  } | null;
 }
 
 export function PreviewSection({ uploadedImage, selectedClothing }: PreviewSectionProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     if (!uploadedImage || !selectedClothing) return;
 
     setIsGenerating(true);
-    // 模拟 AI 处理时间
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    setError(null);
 
-    // 这里使用示例图片模拟生成结果
-    setGeneratedImage('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&h=800&fit=crop');
-    setIsGenerating(false);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('virtual-try-on', {
+        body: {
+          personImage: uploadedImage,
+          clothingImage: selectedClothing.image,
+        }
+      });
+
+      if (fnError) {
+        throw fnError;
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      if (data?.image) {
+        setGeneratedImage(data.image);
+        toast.success('换装成功！');
+      } else {
+        throw new Error('未收到生成的图片');
+      }
+    } catch (err) {
+      console.error('Virtual try-on error:', err);
+      const message = err instanceof Error ? err.message : '换装失败，请重试';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleDownload = () => {
+    if (!generatedImage) return;
+
+    const link = document.createElement('a');
+    link.href = generatedImage;
+    link.download = `ai-tryon-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('图片已下载');
   };
 
   const canGenerate = uploadedImage && selectedClothing;
@@ -33,7 +77,7 @@ export function PreviewSection({ uploadedImage, selectedClothing }: PreviewSecti
             <span className="gradient-text">AI 换装预览</span>
           </h2>
           <p className="text-muted-foreground">
-            点击生成按钮，AI 将为你呈现换装效果
+            点击生成按钮，AI 将为你呈现真实换装效果
           </p>
         </div>
 
@@ -62,8 +106,14 @@ export function PreviewSection({ uploadedImage, selectedClothing }: PreviewSecti
             <div className="aspect-[3/4] rounded-xl overflow-hidden bg-secondary flex items-center justify-center">
               {isGenerating ? (
                 <div className="flex flex-col items-center gap-4">
-                  <Loader2 className="w-12 h-12 text-primary animate-spin" />
-                  <p className="text-muted-foreground">AI 正在为你换装...</p>
+                  <div className="relative">
+                    <Loader2 className="w-16 h-16 text-primary animate-spin" />
+                    <div className="absolute inset-0 blur-xl bg-primary/30 animate-pulse" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-foreground font-medium">AI 正在为你换装...</p>
+                    <p className="text-sm text-muted-foreground mt-1">这可能需要 10-30 秒</p>
+                  </div>
                 </div>
               ) : generatedImage ? (
                 <img
@@ -71,6 +121,11 @@ export function PreviewSection({ uploadedImage, selectedClothing }: PreviewSecti
                   alt="Generated"
                   className="w-full h-full object-cover"
                 />
+              ) : error ? (
+                <div className="text-center px-4">
+                  <p className="text-destructive mb-2">{error}</p>
+                  <p className="text-sm text-muted-foreground">请重试或更换照片</p>
+                </div>
               ) : (
                 <p className="text-muted-foreground text-center px-4">
                   {canGenerate ? '点击下方按钮生成效果' : '请先上传照片并选择服装'}
@@ -119,6 +174,7 @@ export function PreviewSection({ uploadedImage, selectedClothing }: PreviewSecti
                 size="lg"
                 variant="outline"
                 className="border-border hover:bg-secondary px-8"
+                onClick={handleDownload}
               >
                 <Download className="w-5 h-5 mr-2" />
                 下载图片

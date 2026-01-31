@@ -5,17 +5,30 @@ import { UploadSection } from '@/components/UploadSection';
 import { WardrobeSection } from '@/components/WardrobeSection';
 import { PreviewSection } from '@/components/PreviewSection';
 import { Footer } from '@/components/Footer';
+import { Toaster } from '@/components/ui/sonner';
+
+interface ClothingItem {
+  id: string;
+  name: string;
+  category: string;
+  image: string;
+}
 
 export default function Index() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [selectedClothing, setSelectedClothing] = useState<string | null>(null);
+  const [selectedClothing, setSelectedClothing] = useState<{ id: string; image: string } | null>(null);
+  const [customClothingItems, setCustomClothingItems] = useState<ClothingItem[]>([]);
 
   const handleImageUpload = (imageUrl: string) => {
     setUploadedImage(imageUrl || null);
   };
 
-  const handleSelectClothing = (id: string) => {
-    setSelectedClothing(id === selectedClothing ? null : id);
+  const handleSelectClothing = (clothing: { id: string; image: string } | null) => {
+    setSelectedClothing(clothing);
+  };
+
+  const handleAddCustomClothing = (item: ClothingItem) => {
+    setCustomClothingItems(prev => [...prev, item]);
   };
 
   return (
@@ -30,6 +43,8 @@ export default function Index() {
         <WardrobeSection
           selectedClothing={selectedClothing}
           onSelectClothing={handleSelectClothing}
+          customClothingItems={customClothingItems}
+          onAddCustomClothing={handleAddCustomClothing}
         />
         <PreviewSection
           uploadedImage={uploadedImage}
@@ -37,6 +52,7 @@ export default function Index() {
         />
       </main>
       <Footer />
+      <Toaster position="top-center" richColors />
     </div>
   );
 }
