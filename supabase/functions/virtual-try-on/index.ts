@@ -118,56 +118,67 @@ Requirements:
       );
     }
 
-    const data = await response.json();
+    const result = await response.json();
     console.log("AI response received");
 
-    let generatedImage: string | null = null;
-    const message = data.choices?.[0]?.message;
+    // 解析响应，提取生成的图片
+    let generatedImageUrl: string | null = null;
+    let textContent: string | null = null;
+    const message = result.choices?.[0]?.message;
+    const messageContent = message?.content;
 
     // Format 1: content_parts (Gemini native format)
     if (message?.content_parts && Array.isArray(message.content_parts)) {
       for (const part of message.content_parts) {
         if (part.inline_data?.data) {
           const mimeType = part.inline_data.mime_type || "image/png";
-          generatedImage = `data:${mimeType};base64,${part.inline_data.data}`;
+          generatedImageUrl = `data:${mimeType};base64,${part.inline_data.data}`;
           break;
         }
       }
     }
 
     // Format 2: content array with various structures
-    if (!generatedImage && Array.isArray(message?.content)) {
-      for (const item of message.content) {
-        if (item.type === "image_url" && item.image_url?.url) {
-          generatedImage = item.image_url.url;
-          break;
-        }
-        if (item.type === "image" && item.data) {
-          generatedImage = `data:image/png;base64,${item.data}`;
-          break;
-        }
-        if (item.inline_data?.data) {
-          const mimeType = item.inline_data.mime_type || "image/png";
-          generatedImage = `data:${mimeType};base64,${item.inline_data.data}`;
-          break;
+    if (!generatedImageUrl && Array.isArray(messageContent)) {
+      for (const part of messageContent) {
+        if (part.type === "image_url" && part.image_url?.url) {
+          generatedImageUrl = part.image_url.url;
+        } else if (part.type === "text") {
+          textContent = part.text;
+        } else if (part.type === "image" && part.data) {
+          generatedImageUrl = `data:image/png;base64,${part.data}`;
+        } else if (part.inline_data?.data) {
+          const mimeType = part.inline_data.mime_type || "image/png";
+          generatedImageUrl = `data:${mimeType};base64,${part.inline_data.data}`;
         }
       }
     }
 
-    // Format 3: Direct base64 string in content
-    if (!generatedImage && typeof message?.content === "string" && message.content) {
-      if (message.content.startsWith("data:image")) {
-        generatedImage = message.content;
-      } else if (message.content.length > 1000 && /^[A-Za-z0-9+/=\s]+$/.test(message.content)) {
-        generatedImage = `data:image/png;base64,${message.content.replace(/\s/g, '')}`;
+    // Format 3: Direct string in content
+    if (!generatedImageUrl && typeof messageContent === "string" && messageContent) {
+      // 检查是否包含 base64 图片
+      const base64Match = messageContent.match(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/);
+      // 检查是否包含图片 URL
+      const urlMatch = messageContent.match(/https?:\/\/[^\s"']+\.(jpg|jpeg|png|gif|webp)/i);
+
+      if (base64Match) {
+        generatedImageUrl = base64Match[0];
+      } else if (urlMatch) {
+        generatedImageUrl = urlMatch[0];
+      } else if (messageContent.length > 1000 && /^[A-Za-z0-9+/=\s]+$/.test(messageContent)) {
+        // 可能是纯 base64 数据
+        generatedImageUrl = `data:image/png;base64,${messageContent.replace(/\s/g, '')}`;
       }
+      textContent = messageContent;
     }
 
-    if (!generatedImage) {
-      console.error("No image in response:", JSON.stringify(data));
+    if (!generatedImageUrl) {
+      console.error("No image in response:", JSON.stringify(result));
       return new Response(
         JSON.stringify({
-          error: "AI未能生成换装图片，请重试或更换照片"
+          success: false,
+          error: "AI未能生成换装图片，请重试或更换照片",
+          textContent,
         }),
         { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
@@ -178,7 +189,12 @@ Requirements:
     return new Response(
       JSON.stringify({
         success: true,
-        image: generatedImage
+        image: generatedImageUrl,
+        textContent,
+        personImage,
+        clothingImage,
+        model: "google/gemini-3-pro-image-preview",
+        usage: result.usage || null,
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );

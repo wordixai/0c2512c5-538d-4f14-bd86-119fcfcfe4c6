@@ -32,5 +32,31 @@
       "usageCount": 1,
       "lastUsedAt": 1769872772816
     }
+  },
+  "githubRepoPaths": {
+    "wordixai/0c2512c5-538d-4f14-bd86-119fcfcfe4c6": [
+      "/app"
+    ]
+  },
+  "projects": {
+    "/app": {
+      "allowedTools": [],
+      "mcpContextUris": [],
+      "mcpServers": {},
+      "enabledMcpjsonServers": [],
+      "disabledMcpjsonServers": [],
+      "hasTrustDialogAccepted": false,
+      "projectOnboardingSeenCount": 0,
+      "hasClaudeMdExternalIncludesApproved": false,
+      "hasClaudeMdExternalIncludesWarningShown": false,
+      "exampleFiles": [
+        "Index.tsx",
+        "PreviewSection.tsx",
+        "WardrobeSection.tsx",
+        "index.css",
+        "tailwind.config.ts"
+      ],
+      "exampleFilesGeneratedAt": 1769912934945
+    }
   }
 }
